@@ -1,0 +1,24 @@
+{
+  "name": "LetsDoMachineLearning",
+  "version": "1.0.0",
+  "description": "**Let's do Machine Learning**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fhacktory/LetsDoMachineLearning.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fhacktory/LetsDoMachineLearning/issues"
+  },
+  "homepage": "https://github.com/fhacktory/LetsDoMachineLearning",
+  "dependencies": {
+    "brain": "^0.7.0",
+    "lodash": "^3.6.0",
+    "synaptic": "^0.1.7"
+  }
+}
