@@ -5,8 +5,8 @@ var ai = require('./simpleai.js');
 var game = require('./game.js');
 var network = require('./network.js');
 
-var trainingSetLength = 2000,
-    testingSetLength = 1000;
+var trainingSetLength = 400,
+    testingSetLength = 20000;
 
 function showGame(game) {
     var cases = {
@@ -25,7 +25,7 @@ var trainingSet = game.generateGames(trainingSetLength);
 var testingSet = game.generateGames(testingSetLength);
 console.log("Generated %d training games and %d testing games", trainingSet.length, testingSet.length);
 
-var perceptron = new synaptic.Architect.Perceptron(18, 15, 9);
+var perceptron = new synaptic.Architect.Perceptron(18, 15, 4);
 
 function rawGame(game) {
     var raw = new Array(18 + 1).join('0').split('').map(Number);
@@ -39,13 +39,21 @@ function rawGame(game) {
     return raw;
 }
 
+function positionToBits(position) {
+    var bits = [0,0,0,0];
+    var binary = position.toString(2);
+    for (var i = 0; i < binary.length; i++) {
+        bits[i] = Number(binary[i]);
+    };
+    return bits;
+}
+
 function generateData(set) {
     return _.map(set, function(game) {
         var data = {
             input: rawGame(game),
-            output: [0,0,0,0,0,0,0,0,0]
+            output: positionToBits(ai(game))
         };
-        data.output[ai(game)] = 1;
         return data;
     });
 }
