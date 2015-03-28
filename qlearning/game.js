@@ -1,5 +1,6 @@
 var _ = require('lodash');
 
+// Create a new game with a new board or generate one
 var Game = function(board) {
     this.boardSize = 3;
     this.boardLength = this.boardSize * this.boardSize;
@@ -14,6 +15,7 @@ var Game = function(board) {
     return this;
 }
 
+// Apply the move to the board
 Game.prototype.makeMove = function(move, player) {
     if (!this.isPossibleMove(move))
         throw new Error("You cannot do this move");
@@ -25,6 +27,7 @@ Game.prototype.isPossibleMove = function(move) {
     return this.board[move] == -1;
 };
 
+// Return all the free moves, the moves are the indexes of the case to set
 Game.prototype.getFreeMoves = function() {
     var freeMoves = [];
     for (var i = 0; i < this.boardLength; i++) {
@@ -34,12 +37,12 @@ Game.prototype.getFreeMoves = function() {
     return freeMoves;
 }
 
-var winnerMoves = [
+var winnerMoves = [ // To not make 200 ifs...
     [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horinzontal lines
     [0, 3, 6], [1, 4, 7], [2, 5, 8], // Vertical lines
     [0, 4, 8], [2, 4, 6] // Diagonals
 ];
-function checkWinnerMove(board, winnerMove) {
+function checkWinnerMove(board, winnerMove) { // If the 3 cases are the same, return the players who won, else return -1
     if (board[winnerMove[0]] == board[winnerMove[1]] && board[winnerMove[1]] == board[winnerMove[2]])
         return winnerMove[0];
     return -1;
@@ -64,19 +67,21 @@ Game.prototype.getWinner = function() {
     return -1;
 }
 
-// Game to string
+// Game to string for internal purposes
 Game.prototype.serialize = function() {
     return _(this.board).map(function(caseVal) {
         return caseVal + 1;
     }).join('');
 }
 
+// Create a new game and apply the move to it
 Game.prototype.createFromMove = function(move, player) {
     var newGame = new Game(this.board);
     newGame.makeMove(move, player);
     return newGame;
 }
 
+// For debuging purposes
 Game.prototype.toString = function() {
     function caseToChar(val) {
         if (val == -1)
