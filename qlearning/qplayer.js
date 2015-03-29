@@ -49,11 +49,11 @@ QPlayer.prototype.getTurn = function(state) {
     var newState = state.createFromMove(move, this.playerId);
     var newStateSerialization = newState.serialize();
     if (newState.getWinner() == this.playerId)
-        this.scores[newState.serialize()] = 1;
+        this.scores[newStateSerialization] = 1;
     var serialization = state.serialize();
-    this.lastStateSerialization = serialization;
     this.counts[serialization] = this.counts[serialization] ? this.counts[serialization] + 1 : 1;
     this.scores[serialization] = (this.scores[serialization] || 0) + (1 / this.counts[serialization]) * (this.G * (this.scores[newStateSerialization] || 0) - (this.scores[serialization] || 0));
+    this.lastStateSerialization = newStateSerialization;
     this.turns++;
     return move;
 }
