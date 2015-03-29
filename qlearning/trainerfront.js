@@ -1,11 +1,23 @@
 var _ = require('lodash');
 var Game = require('./game.js');
+var QPlayer = require('./qplayer.js');
 
-var Trainer = function(player1, player2) {
+var game = null;
+var turn = 0;
+
+var TrainerFront = function(mode) {
+    if (mode == 0) {
+        var player1 = new QPlayer(0, 0.9).loadFromFile("trained.qp");
+        var player2 = new IaPlayer(1);
+    }
     this.players = [player1, player2];
+    this.players = _.shuffle(this.players);
+    game = new Game();
+    this.play();
+    turn = 0;
 }
 
-Trainer.prototype.train = function(options, callback) {
+TrainerFront.prototype.train = function(options, callback) {
     var iterations = options.iterations || 1000;
     var loggerIterations = options.loggerIterations || iterations / 20;
 
@@ -53,16 +65,28 @@ function logCurrentState(i, results) {
     console.log(i2s(i, 8) + " | " + i2s(results[0], 8) + " | " + i2s(results[1], 8) + " | " + i2s(results[2], 6) + " | " + percentWon + "% | " + percentDraws + " % | " + percentFail + " %");
 }
 
-Trainer.prototype.runGame = function() {
-    var game = new Game();
-    var turn = 0;
-    players = _.shuffle(this.players);
-    while (!game.isFinished()) {
-        var player = players[turn % 2];
-        game.makeMove(player.getTurn(game), player.playerId);
-        turn++;
+TrainerFront.prototype.play = function (x, y) {
+    var results = [0, 0, 0]; // Player1Win, Player2Win, Tie
+    if (!game.isFinished()) {
+        if (x == -1) {
+            var player = players[turn % 2];
+            game.makeMove(player.getTurn(game), player.playerId);
+            turn++;
+        }
+    } else {
+        var winnerId = game.getWinner();
+            if (winnerId !== -1) {
+                this.players[1 - winnerId].punish(-1);
+                results[winnerId]++;
+            } else {
+                results[2]++;
+            }
     }
+    return {"turn": turn, "player": player.playerId, "x":x, "y": y};
+}
+
+TrainerFront.prototype.runGame = function(turn) {
     return game;
 }
 
-module.exports = Trainer;
+module.exports = TrainerFront;

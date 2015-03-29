@@ -73,6 +73,9 @@ QPlayer.prototype.punish = function(ratio) {
 }
 
 QPlayer.prototype.saveToFile = function(filepath) {
+    if (!fs) {
+        return this;
+    }
     fs.writeFileSync(filepath, JSON.stringify({
         scores: Array.prototype.slice.call(this.scores),
         counts: Array.prototype.slice.call(this.counts),
@@ -83,7 +86,7 @@ QPlayer.prototype.saveToFile = function(filepath) {
 }
 
 QPlayer.prototype.loadFromFile = function(filepath) {
-    if (!fs.existsSync(filepath)) {
+    if (!fs || !fs.existsSync(filepath)) {
         return this;
     }
     var data = fs.readFileSync(filepath);

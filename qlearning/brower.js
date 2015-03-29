@@ -4,6 +4,7 @@ var QPlayer = require('./qplayer.js');
 var DumbPlayer = require('./dumbplayer.js');
 var Trainer = require('./trainer.js');
 var IaPlayer = require('./iaplayer.js');
+window.TrainerFront = require('./trainerfront.js');
 
 var iterations = 1000000;
 

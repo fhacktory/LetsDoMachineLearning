@@ -5,7 +5,7 @@ var Game = function(board) {
     this.boardSize = 3;
     this.boardLength = this.boardSize * this.boardSize;
     if (board) {
-        this.board = board.slice(0);
+        this.board = _.clone(board);
     } else {
         this.board = [];
         for (var i = 0; i < this.boardLength; i++) {
@@ -87,11 +87,10 @@ Game.prototype.getWinner = function() {
 
 // Game to string for internal purposes
 Game.prototype.serialize = function() {
-    var serialized = 0;
-    for(var i = 0; i < this.board.length; i++) {
-        if(this.board[i] >= 0)
-            serialized += (this.board[i] + 1) * Math.pow(3, i);
-    }
+    var serialized = "";
+    for (var i = this.board.length - 1; i >= 0; i--) {
+        serialized += this.board[i] + 1;
+    };
     return serialized;
 }
 

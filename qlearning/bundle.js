@@ -5,14 +5,15 @@ var QPlayer = require('./qplayer.js');
 var DumbPlayer = require('./dumbplayer.js');
 var Trainer = require('./trainer.js');
 var IaPlayer = require('./iaplayer.js');
+window.TrainerFront = require('./trainerfront.js');
 
 var iterations = 1000000;
 
 
 window.start = function () {
     var qplayer = new QPlayer(0, 0.9);
-    // var dumbplayer = new DumbPlayer(1);
-    var Iaplayer = new IaPlayer(1);
+    var dumbplayer = new DumbPlayer(1);
+    // var Iaplayer = new IaPlayer(1);
 
     var trainer = new Trainer(qplayer, Iaplayer);
     var results = trainer.train({
@@ -25,7 +26,7 @@ window.start = function () {
 }
 
 
-},{"./dumbplayer.js":2,"./game.js":3,"./iaplayer.js":4,"./qplayer.js":6,"./trainer.js":7,"lodash":5}],2:[function(require,module,exports){
+},{"./dumbplayer.js":2,"./game.js":3,"./iaplayer.js":4,"./qplayer.js":6,"./trainer.js":7,"./trainerfront.js":8,"lodash":5}],2:[function(require,module,exports){
 var DumbPlayer = function(playerId) {
     this.playerId = playerId;
 };
@@ -52,7 +53,7 @@ var Game = function(board) {
     this.boardSize = 3;
     this.boardLength = this.boardSize * this.boardSize;
     if (board) {
-        this.board = board.slice(0);
+        this.board = _.clone(board);
     } else {
         this.board = [];
         for (var i = 0; i < this.boardLength; i++) {
@@ -134,15 +135,10 @@ Game.prototype.getWinner = function() {
 
 // Game to string for internal purposes
 Game.prototype.serialize = function() {
-    // var serialized = "";
-    // for (var i = this.board.length - 1; i >= 0; i--) {
-    //     serialized += this.board[i] + 1;
-    // };
-    // return serialized;
-    var serialized = 0;
-    for(var i = 0; i < this.board.length; i++)
-        if(this.board[i] >= 0)
-            serialized += (this.board[i] + 1) * Math.pow(3, i);
+    var serialized = "";
+    for (var i = this.board.length - 1; i >= 0; i--) {
+        serialized += this.board[i] + 1;
+    };
     return serialized;
 }
 
@@ -12126,60 +12122,74 @@ var QPlayer = function(playerId, G) {
     this.playerId = playerId;
     this.lastStateSerialization = null;
     this.turns = 0;
+    this.learningActivated = true;
     this.G = G || 0.9;
 };
 
-QPlayer.prototype.getMaxProba = function(freeMoves, state) {
-    var probaMax = -Infinity;
-    var posMax = [];
+QPlayer.prototype.getProba = function(freeMoves, state) {
+    var probaExtreme = this.playerId === 0 ? -Infinity : Infinity;
+    var posExtreme = [];
     for (var i = freeMoves.length - 1; i >= 0; i--) {
         var proba = this.getProbaFromKey(state.createFromMove(freeMoves[i], this.playerId).serialize());
-        if (proba > probaMax) {
-            probaMax = proba;
-            posMax = [freeMoves[i]];
-        } else if (proba === probaMax) {
-            posMax.push(freeMoves[i]);
+        if ((this.playerId === 0) ? (proba > probaExtreme) : (proba < probaExtreme)) {
+            probaExtreme = proba;
+            posExtreme = [freeMoves[i]];
+        } else if (proba === probaExtreme) {
+            posExtreme.push(freeMoves[i]);
         }
     };
-    return posMax;
+    return posExtreme;
 }
 
 QPlayer.prototype.getProbaFromKey = function(key) {
     return this.scores[key] || 0;
 }
 
+QPlayer.prototype.setLearningState = function(learningState) {
+    this.learningActivated = learningState;
+    return this;
+}
+
 QPlayer.prototype.getTurn = function(state) {
     var i = Math.random();
     var move;
-    if (i <= 0.1) {
+    if (i <= 0.1 && this.learningActivated) {
         move = state.getFreeMove();
     } else {
         var freeMoves = state.getFreeMoves();
-        var resultProbas = this.getMaxProba(freeMoves, state);
-        if (resultProbas.length == 1) {
+        var resultProbas = this.getProba(freeMoves, state);
+        if (resultProbas.length === 1) {
             move = resultProbas[0];
         } else {
             move = resultProbas[Math.floor(Math.random() * resultProbas.length)];
         }
     }
-    var newState = state.createFromMove(move, this.playerId);
-    var newStateSerialization = newState.serialize();
-    if (newState.getWinner() == this.playerId)
-        this.scores[newStateSerialization] = 1;
-    var serialization = state.serialize();
-    this.counts[serialization] = this.counts[serialization] ? this.counts[serialization] + 1 : 1;
-    this.scores[serialization] = (this.scores[serialization] || 0) + (1 / (1 + this.counts[serialization])) * (this.G * (this.scores[newStateSerialization] || 0) - (this.scores[serialization] || 0));
-    this.lastStateSerialization = newStateSerialization;
-    this.turns++;
+    if (this.learningActivated) {
+        var newState = state.createFromMove(move, this.playerId);
+        var newStateSerialization = newState.serialize();
+        if (newState.getWinner() === this.playerId) {
+            this.scores[newStateSerialization] = 1;
+        }
+        var serialization = state.serialize();
+        this.counts[serialization] = this.counts[serialization] ? this.counts[serialization] + 1 : 1;
+        this.scores[serialization] = (this.scores[serialization] || 0) + (1 / (1 + this.counts[serialization])) * (this.G * (this.scores[newStateSerialization] || 0) - (this.scores[serialization] || 0));
+        this.lastStateSerialization = newStateSerialization;
+        this.turns++;
+    }
     return move;
 }
 
 QPlayer.prototype.punish = function(ratio) {
-    this.scores[this.lastStateSerialization] = ratio;
+    if (this.learningActivated) {
+        this.scores[this.lastStateSerialization] = ratio;
+    }
     return this;
 }
 
 QPlayer.prototype.saveToFile = function(filepath) {
+    if (!fs) {
+        return this;
+    }
     fs.writeFileSync(filepath, JSON.stringify({
         scores: Array.prototype.slice.call(this.scores),
         counts: Array.prototype.slice.call(this.counts),
@@ -12190,7 +12200,7 @@ QPlayer.prototype.saveToFile = function(filepath) {
 }
 
 QPlayer.prototype.loadFromFile = function(filepath) {
-    if (!fs.existsSync(filepath)) {
+    if (!fs || !fs.existsSync(filepath)) {
         return this;
     }
     var data = fs.readFileSync(filepath);
@@ -12211,7 +12221,8 @@ QPlayer.prototype.loadFromFile = function(filepath) {
 module.exports = QPlayer;
 
 }).call(this,require('_process'))
-},{"_process":9,"fs":8,"lodash":5}],7:[function(require,module,exports){
+},{"_process":10,"fs":9,"lodash":5}],7:[function(require,module,exports){
+var _ = require('lodash');
 var Game = require('./game.js');
 
 var Trainer = function(player1, player2) {
@@ -12224,23 +12235,23 @@ Trainer.prototype.train = function(options, callback) {
 
     var results = [0, 0, 0]; // Player1Win, Player2Win, Tie
 
-    console.log("  total  |   won    |  lost    |  draws | % won  | % draws")
+    console.log("  total  |   won    |  lost    |  draws | % won  | % draws | % fail")
 
     var trainingSet = function trainAll(iteration, callback) {
-        for (var i = 0; i < loggerIterations; i++) {
+        for (var i = 0; i < loggerIterations && i < iterations; i++) {
             var game = this.runGame();
             var winnerId = game.getWinner();
-            if (winnerId != -1) {
+            if (winnerId !== -1) {
                 this.players[1 - winnerId].punish(-1);
                 results[winnerId]++;
             } else {
-                this.players[0].punish(-0.5);
-                this.players[1].punish(-0.5);
+                // this.players[0].punish(-0.5);
+                // this.players[1].punish(-0.5);
                 results[2]++;
             }
         };
-        logCurrentState((iteration + 1) * loggerIterations, results);
-        if (iteration * loggerIterations >= iterations)
+        logCurrentState((iteration) * loggerIterations + i, results);
+        if ((iteration + 1) * loggerIterations >= iterations)
             return callback();
         setTimeout(trainingSet.bind(this, iteration + 1, callback));
     }.bind(this);
@@ -12248,7 +12259,6 @@ Trainer.prototype.train = function(options, callback) {
     var startTime = new Date();
 
     trainingSet(0, function() {
-        logCurrentState(iterations, results);
         callback({
             results: results,
             elapsedTime: new Date() - startTime
@@ -12263,15 +12273,16 @@ function i2s(int, length) {
 function logCurrentState(i, results) {
     var percentWon = (results[0] / (i - 1) * 100).toPrecision(4);
     var percentDraws = (results[2] / (i - 1) * 100).toPrecision(4);
-    console.log(i2s(i, 8) + " | " + i2s(results[0], 8) + " | " + i2s(results[1], 8) + " | " + i2s(results[2], 6) + " | " + percentWon + "% | " + percentDraws + " %");
+    var percentFail = (results[1] / (i - 1) * 100).toPrecision(4);
+    console.log(i2s(i, 8) + " | " + i2s(results[0], 8) + " | " + i2s(results[1], 8) + " | " + i2s(results[2], 6) + " | " + percentWon + "% | " + percentDraws + " % | " + percentFail + " %");
 }
 
 Trainer.prototype.runGame = function() {
     var game = new Game();
     var turn = 0;
-    var starter = Math.floor(Math.random() * 2);
+    players = _.shuffle(this.players);
     while (!game.isFinished()) {
-        var player = this.players[(turn + starter) % 2];
+        var player = players[turn % 2];
         game.makeMove(player.getTurn(game), player.playerId);
         turn++;
     }
@@ -12280,9 +12291,103 @@ Trainer.prototype.runGame = function() {
 
 module.exports = Trainer;
 
-},{"./game.js":3}],8:[function(require,module,exports){
+},{"./game.js":3,"lodash":5}],8:[function(require,module,exports){
+var _ = require('lodash');
+var Game = require('./game.js');
+var QPlayer = require('./qplayer.js');
 
-},{}],9:[function(require,module,exports){
+var game = null;
+var turn = 0;
+
+var TrainerFront = function(mode) {
+    if (mode == 0) {
+        var player1 = new QPlayer(0, 0.9).loadFromFile("trained.qp");
+        var player2 = new IaPlayer(1);
+    }
+    this.players = [player1, player2];
+    this.players = _.shuffle(this.players);
+    game = new Game();
+    this.play();
+    turn = 0;
+}
+
+TrainerFront.prototype.train = function(options, callback) {
+    var iterations = options.iterations || 1000;
+    var loggerIterations = options.loggerIterations || iterations / 20;
+
+    var results = [0, 0, 0]; // Player1Win, Player2Win, Tie
+
+    console.log("  total  |   won    |  lost    |  draws | % won  | % draws | % fail")
+
+    var trainingSet = function trainAll(iteration, callback) {
+        for (var i = 0; i < loggerIterations && i < iterations; i++) {
+            var game = this.runGame();
+            var winnerId = game.getWinner();
+            if (winnerId !== -1) {
+                this.players[1 - winnerId].punish(-1);
+                results[winnerId]++;
+            } else {
+                // this.players[0].punish(-0.5);
+                // this.players[1].punish(-0.5);
+                results[2]++;
+            }
+        };
+        logCurrentState((iteration) * loggerIterations + i, results);
+        if ((iteration + 1) * loggerIterations >= iterations)
+            return callback();
+        setTimeout(trainingSet.bind(this, iteration + 1, callback));
+    }.bind(this);
+
+    var startTime = new Date();
+
+    trainingSet(0, function() {
+        callback({
+            results: results,
+            elapsedTime: new Date() - startTime
+        });
+    });
+}
+
+function i2s(int, length) {
+    return String("        " + int).slice(-length);
+}
+
+function logCurrentState(i, results) {
+    var percentWon = (results[0] / (i - 1) * 100).toPrecision(4);
+    var percentDraws = (results[2] / (i - 1) * 100).toPrecision(4);
+    var percentFail = (results[1] / (i - 1) * 100).toPrecision(4);
+    console.log(i2s(i, 8) + " | " + i2s(results[0], 8) + " | " + i2s(results[1], 8) + " | " + i2s(results[2], 6) + " | " + percentWon + "% | " + percentDraws + " % | " + percentFail + " %");
+}
+
+TrainerFront.prototype.play = function (x, y) {
+    var results = [0, 0, 0]; // Player1Win, Player2Win, Tie
+    if (!game.isFinished()) {
+        if (x == -1) {
+            var player = players[turn % 2];
+            game.makeMove(player.getTurn(game), player.playerId);
+            turn++;
+        }
+    } else {
+        var winnerId = game.getWinner();
+            if (winnerId !== -1) {
+                this.players[1 - winnerId].punish(-1);
+                results[winnerId]++;
+            } else {
+                results[2]++;
+            }
+    }
+    return {"turn": turn, "player": player.playerId, "x":x, "y": y};
+}
+
+TrainerFront.prototype.runGame = function(turn) {
+    return game;
+}
+
+module.exports = TrainerFront;
+
+},{"./game.js":3,"./qplayer.js":6,"lodash":5}],9:[function(require,module,exports){
+
+},{}],10:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
