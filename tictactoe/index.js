@@ -1,65 +1,76 @@
-var synaptic = require('synaptic');
-var _ = require('lodash');
-
-var ai = require('./simpleai.js');
 var game = require('./game.js');
-var network = require('./network.js');
+var ai = require('./simpleai.js');
 
-var trainingSetLength = 400,
-    testingSetLength = 20000;
+var G = 0.9;
 
-function showGame(game) {
-    var cases = {
-        0: ' ',
-        1: 'x',
-        2: 'o'
+var scores = [];
+var counts = [];
+// 1 => the number of game to generate
+var start_game = game.newGame();
+console.log('start_game = '+start_game);
+
+var states = start_game;
+
+function getMaxProba(probaArray) {
+    var probaMax = 0;
+    var posMax = [];
+    for (var i = 0; i < probaArray.length; i++) {
+        if (probaArray[i] > probaMax) {
+            posMax = [];
+            probaMax = probaArray[i];
+            posMax.push(i);
+        } else if (probaArray[i] == probaMax) {
+            posMax.push(i);
+        }
     }
-    console.log(cases[game[0]], '|', cases[game[1]], '|', cases[game[2]]);
-    console.log(' -  -  -');
-    console.log(cases[game[3]], '|', cases[game[4]], '|', cases[game[5]]);
-    console.log(' -  -  -');
-    console.log(cases[game[6]], '|', cases[game[7]], '|', cases[game[8]]);
+
+    return {'positions': posMax, 'max': probaMax}; 
 }
 
-var trainingSet = game.generateGames(trainingSetLength);
-var testingSet = game.generateGames(testingSetLength);
-console.log("Generated %d training games and %d testing games", trainingSet.length, testingSet.length);
-
-var perceptron = new synaptic.Architect.Perceptron(18, 15, 4);
-
-function rawGame(game) {
-    var raw = new Array(18 + 1).join('0').split('').map(Number);
-    for (var i = 0; i < game.length; i++) {
-        if (game[i] == 1) {
-            raw[i] = 1;
-        } else if (game[i] == 2) {
-            raw[i + 9] = 1;
-        };
-    };
-    return raw;
+while (42) {
+    var old_states = states;
+    var i = Math.random();
+    var position = 0;
+    if (i <= 0.10) {
+        // new random move
+        position = game.emptyCase(states);
+    } else {
+        var possibilitiesArray = game.getAllPossibilities(states);
+        var tmpArrray = [];
+        for (var i = 0; i < possibilitiesArray.length; i++) {
+            if (possibilitiesArray[i].indexOf(scores)) {
+                // Calcul proba
+                tmpArrray[possibilitiesArray[i]] = scores[i];
+            }
+        }
+        var res = getMaxProba(tmpArrray);
+        if (res.positions > 1) {
+            // direct access to position
+            position = res.positions[0];
+        } else if (res.positions.length > 0) {
+            position = Math.random() % res.positions.length;            
+        } else {
+            position = Math.random() % possibilitiesArray.length;
+        }
+    }
+    // Move the player X
+    states[position] = 1;
+    // Move the player O
+    states[ai(game)] = 2;
+    var new_states = states;
+    var winner = game.checkWin(states);
+    // @FlavienP could optimise 4 lines ! Awesome !
+    // We have won !
+    if (winner == 1) {
+        scores[old_states] = 1;
+        return ;
+    } else if (winner == -1) /* We have lose */ {
+        scores[old_states] = -1;
+        return ;
+    } else if (winner == 0) /* Draw !!! */ {
+        scores[old_states] = -0.5;
+        return ;
+    }
+    scores[old_states] += (1 / (1 + counts[old_states])) * (G * scores[new_states] - scores[old_states]);
+    counts[old_states]++;
 }
-
-function positionToBits(position) {
-    var bits = [0,0,0,0];
-    var binary = position.toString(2);
-    for (var i = 0; i < binary.length; i++) {
-        bits[i] = Number(binary[i]);
-    };
-    return bits;
-}
-
-function generateData(set) {
-    return _.map(set, function(game) {
-        var data = {
-            input: rawGame(game),
-            output: positionToBits(ai(game))
-        };
-        return data;
-    });
-}
-var trainingData = generateData(trainingSet);
-var testingData = generateData(testingSet);
-
-network.train(perceptron, trainingData, 0.1);
-
-network.test(perceptron, testingData);
