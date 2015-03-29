@@ -8,15 +8,13 @@ var scores = {};
 var counts = [];
 // 1 => the number of game to generate
 var states = new Game(); 
-console.log('start_game = '+states.toString());
 
 function getMaxProba(probaObject) {
     var probaMax = 0;
     var posMax = [];
     var probaArray = _.values(probaObject);
-    console.log('tab size = ', probaArray.length);
+    console.log('PROBA ARRAY = ' + probaArray);
     for (var i = 0; i < probaArray.length; i++) {
-        console.log('ii = ' + i);
         if (probaArray[i] > probaMax) {
             posMax = [];
             probaMax = probaArray[i];
@@ -29,7 +27,7 @@ function getMaxProba(probaObject) {
 }
 
 function getProbaFromKey(scores, key) {
-    if (scores.key != 'undefined') {
+    if (scores[key] != undefined) {
         return scores[key];
     }
     return 0;
@@ -37,22 +35,23 @@ function getProbaFromKey(scores, key) {
 
 while (42) {
     var old_states = states;
-    console.log('start_game = '+states.toString());
     var i = Math.floor(Math.random() * states.board.length);
     var position = 0;
     if (i <= 0.10) {
         // new random move
         position = states.getFreeMove();
+        console.log('position random = ' + position);
     } else {
         var moveArray = states.getFreeMoves();
+        console.log("Free moves : Position = " +moveArray);
         var tmpArray = {};
         for (var i = 0; i < moveArray.length; i++) {
-            console.log('t = ' + i);
             tmpStates = states.createFromMove(moveArray[i], 1);
             var key = tmpStates.serialize();
             tmpArray[key] = getProbaFromKey(scores, key);
         }
         var res = getMaxProba(tmpArray);
+        console.log("RES VALUE = " + res.positions);
         if (res.positions == 1) {
             // direct access to position
             position = res.positions[0];
@@ -63,23 +62,26 @@ while (42) {
         }
     }
     console.log("Player X : Position = " +position);
-    console.log("Player X : Board Game = " +states.toString());
+    console.log("Player X : Board Game = \n" +states.toString());
     // Move the player X
     states.makeMove(position, 1);
-    console.log("Player X : Position = " +position);
-    var arrayFree = states.getFreeMoves();
-    if (arrayFree.length > 0) {
-        var positionAi = Math.floor(Math.random() * arrayFree.length);
+    console.log("Player X : Board Game = \n" +states.toString());
+    var positionAi = states.getFreeMove();
+    if (positionAi != -1) {
         console.log("Player O : Position = " +positionAi);
+        console.log("Player O : Board Game = \n" +states.toString());
         // Move the player O
-        states.makeMove(positionAi, 2);
+        states.makeMove(positionAi, 0);
+        console.log("Player O : Board Game = \n" +states.toString());
     }
     
     var new_states = states;
     // @FlavienP could optimise 4 lines ! Awesome !
+    // After three times 42 will become false - @FlavienP
     if (states.isFinished()) {
         var winner = states.getWinner();
         // We have won !
+        console.log("WInner value : " ,winner);
         if (winner == 1) {
             scores.array[old_states] = 1;
             return ;
