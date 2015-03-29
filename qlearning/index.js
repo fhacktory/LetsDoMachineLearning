@@ -25,5 +25,6 @@ var results = trainer.train({
     console.log("Total turns:", qplayer.turns);
     qplayer.saveToFile("trained.qp");
     console.log('Saved to file');
+    console.log('Finished in :', results.elapsedTime);
 });
 

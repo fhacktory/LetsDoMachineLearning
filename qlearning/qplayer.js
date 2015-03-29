@@ -1,28 +1,30 @@
 var fs = require('fs');
 var _ = require('lodash');
 
-function getMaxProba(probaObject) {
-    var probaMax = -Infinity;
-    var posMax = [];
-    _.each(probaObject, function(value, index) {
-        if (value > probaMax) {
-            posMax = [index];
-            probaMax = value;
-        } else if (value == probaMax) {
-            posMax.push(index);
-        }
-    })
-    return {moves: posMax, max: probaMax};
-}
 
 var QPlayer = function(playerId, G) {
-    this.scores = {};
-    this.counts = {};
+    this.scores = new Float32Array(20000);
+    this.counts = new Float32Array(20000);
     this.playerId = playerId;
     this.lastStateSerialization = null;
     this.turns = 0;
     this.G = G || 0.9;
 };
+
+QPlayer.prototype.getMaxProba = function(freeMoves, state) {
+    var probaMax = -Infinity;
+    var posMax = [];
+    for (var i = freeMoves.length - 1; i >= 0; i--) {
+        var proba = this.getProbaFromKey(state.createFromMove(freeMoves[i], this.playerId).serialize());
+        if (proba > probaMax) {
+            probaMax = proba;
+            posMax = [freeMoves[i]];
+        } else if (proba === probaMax) {
+            posMax.push(freeMoves[i]);
+        }
+    };
+    return posMax;
+}
 
 QPlayer.prototype.getProbaFromKey = function(key) {
     return this.scores[key] || 0;
@@ -35,15 +37,11 @@ QPlayer.prototype.getTurn = function(state) {
         move = state.getFreeMove();
     } else {
         var freeMoves = state.getFreeMoves();
-        var movesProbas = [];
-        for (var i = freeMoves.length - 1; i >= 0; i--) {
-            movesProbas[freeMoves[i]] = this.getProbaFromKey(state.createFromMove(freeMoves[i], this.playerId).serialize());
-        };
-        var resultProbas = getMaxProba(movesProbas);
-        if (resultProbas.moves.length == 1) {
-            move = resultProbas.moves[0];
+        var resultProbas = this.getMaxProba(freeMoves, state);
+        if (resultProbas.length == 1) {
+            move = resultProbas[0];
         } else {
-            move = resultProbas.moves[Math.floor(Math.random() * resultProbas.moves.length)];
+            move = resultProbas[Math.floor(Math.random() * resultProbas.length)];
         }
     }
     var newState = state.createFromMove(move, this.playerId);
@@ -65,8 +63,8 @@ QPlayer.prototype.punish = function(ratio) {
 
 QPlayer.prototype.saveToFile = function(filepath) {
     fs.writeFileSync(filepath, JSON.stringify({
-        scores: this.scores,
-        counts: this.counts,
+        scores: Array.prototype.slice.call(this.scores),
+        counts: Array.prototype.slice.call(this.counts),
         turns: this.turns,
         G: this.G
     }));
@@ -85,8 +83,8 @@ QPlayer.prototype.loadFromFile = function(filepath) {
         console.error("Impossible to get training file", e);
         process.exit(1);
     }
-    this.scores = trainedData.scores;
-    this.counts = trainedData.counts;
+    this.scores = new Float32Array(trainedData.scores);
+    this.counts = new Float32Array(trainedData.counts);
     this.turns = trainedData.turns;
     this.G = trainedData.G;
     return this;
