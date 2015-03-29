@@ -10,19 +10,20 @@ var counts = [];
 var states = new Game(); 
 
 function getMaxProba(probaObject) {
-    var probaMax = 0;
+    var probaMax = -Infinity;
     var posMax = [];
-    var probaArray = _.values(probaObject);
-    console.log('PROBA ARRAY = ' + probaArray);
-    for (var i = 0; i < probaArray.length; i++) {
-        if (probaArray[i] > probaMax) {
+    _.each(probaObject, function(value, index) {
+        if (value > probaMax) {
             posMax = [];
-            probaMax = probaArray[i];
-            posMax.push(i);
-        } else if (probaArray[i] == probaMax) {
-            posMax.push(i);
+            probaMax = value;
+            console.log('probaObject[i] = ', index);
+            posMax.push(index);
+        } else if (value == probaMax) {
+            console.log('probaObject[i] = ', index);
+
+            posMax.push(index);
         }
-    }
+    })
     return {'positions': posMax, 'max': probaMax}; 
 }
 
@@ -48,17 +49,15 @@ while (42) {
         for (var i = 0; i < moveArray.length; i++) {
             tmpStates = states.createFromMove(moveArray[i], 1);
             var key = tmpStates.serialize();
-            tmpArray[key] = getProbaFromKey(scores, key);
+            tmpArray[moveArray[i]] = getProbaFromKey(scores, key);
         }
         var res = getMaxProba(tmpArray);
         console.log("RES VALUE = " + res.positions);
-        if (res.positions == 1) {
+        if (res.positions.length == 1) {
             // direct access to position
             position = res.positions[0];
         } else if (res.positions.length > 1) {
-            position = Math.floor(Math.random() * res.positions.length);
-        } else {
-            position = Math.floor(Math.random() * moveArray.length);
+            position = res.positions[Math.floor(Math.random() * res.positions.length)];
         }
     }
     console.log("Player X : Position = " +position);
@@ -83,13 +82,13 @@ while (42) {
         // We have won !
         console.log("WInner value : " ,winner);
         if (winner == 1) {
-            scores.array[old_states] = 1;
+            scores[old_states.serialize()] = 1;
             return ;
         } else if (winner == 0) /* We have lose */ {
-            scores[old_states] = -1;
+            scores[old_states.serialize()] = -1;
             return ;
         } else if (winner == -1) /* Draw !!! */ {
-            scores[old_states] = -0.5;
+            scores[old_states.serialize()] = -0.5;
             return ;
         }
     }
