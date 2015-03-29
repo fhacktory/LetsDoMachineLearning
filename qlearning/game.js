@@ -20,7 +20,7 @@ Game.prototype.clone = function() {
 }
 
 // Apply the move to the board
-Game.prototype.makeMove = function(move, player) {
+Game.prototype.makeMove = function(move, player, log) {
     if (!this.isPossibleMove(move))
         throw new Error("You cannot do this move");
     if (player !== 0 && player !== 1)
