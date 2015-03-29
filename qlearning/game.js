@@ -19,6 +19,8 @@ var Game = function(board) {
 Game.prototype.makeMove = function(move, player) {
     if (!this.isPossibleMove(move))
         throw new Error("You cannot do this move");
+    if (player !== 0 && player !== 1)
+        throw new Error("Wrong player");
     this.board[move] = player;
     return this;
 }
