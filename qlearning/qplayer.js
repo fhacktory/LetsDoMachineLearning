@@ -1,3 +1,4 @@
+var fs = require('fs');
 var _ = require('lodash');
 
 function getMaxProba(probaObject) {
@@ -14,12 +15,13 @@ function getMaxProba(probaObject) {
     return {moves: posMax, max: probaMax};
 }
 
-var QPlayer = function(playerId) {
+var QPlayer = function(playerId, G) {
     this.scores = {};
     this.counts = {};
     this.playerId = playerId;
     this.lastStateSerialization = null;
-    this.G = 0.9;
+    this.turns = 0;
+    this.G = G || 0.9;
 };
 
 QPlayer.prototype.getProbaFromKey = function(key) {
@@ -50,13 +52,44 @@ QPlayer.prototype.getTurn = function(state) {
         this.scores[newState.serialize()] = 1;
     var serialization = state.serialize();
     this.lastStateSerialization = serialization;
-    this.counts[serialization]++;
-    this.scores[serialization] += (1 / this.counts[serialization]) * (this.G * this.scores[newStateSerialization] - this.scores[serialization]);
+    this.counts[serialization] = this.counts[serialization] ? this.counts[serialization] + 1 : 1;
+    this.scores[serialization] = (this.scores[serialization] || 0) + (1 / this.counts[serialization]) * (this.G * (this.scores[newStateSerialization] || 0) - (this.scores[serialization] || 0));
+    this.turns++;
     return move;
 }
 
 QPlayer.prototype.punish = function(ratio) {
     this.scores[this.lastStateSerialization] = ratio;
+    return this;
+}
+
+QPlayer.prototype.saveToFile = function(filepath) {
+    fs.writeFileSync(filepath, JSON.stringify({
+        scores: this.scores,
+        counts: this.counts,
+        turns: this.turns,
+        G: this.G
+    }));
+    return this;
+}
+
+QPlayer.prototype.loadFromFile = function(filepath) {
+    if (!fs.existsSync(filepath)) {
+        return this;
+    }
+    var data = fs.readFileSync(filepath);
+    var trainedData;
+    try {
+        trainedData = JSON.parse(data);
+    } catch (e) {
+        console.error("Impossible to get training file", e);
+        process.exit(1);
+    }
+    this.scores = trainedData.scores;
+    this.counts = trainedData.counts;
+    this.turns = trainedData.turns;
+    this.G = trainedData.G;
+    return this;
 }
 
 module.exports = QPlayer;

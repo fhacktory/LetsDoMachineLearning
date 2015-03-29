@@ -4,12 +4,21 @@ var QPlayer = require('./qplayer.js');
 var DumbPlayer = require('./dumbplayer.js');
 var Trainer = require('./trainer.js');
 
-var G = 0.9;
+var iterations = 100000;
 
-var qplayer = new QPlayer(0);
+var qplayer = new QPlayer(0, 0.9).loadFromFile("trained.qp");
 var dumbplayer = new DumbPlayer(1);
 
-var trainer = new Trainer(qplayer, dumbplayer);
-var results = trainer.train({iterations: 40000});
+process.on('SIGINT', function() {
+    qplayer.saveToFile("trained.qp");
+    console.log('Saved to file, exiting...');
+    process.exit(0);
+});
 
-console.log("Results:", results);
+var trainer = new Trainer(qplayer, dumbplayer);
+var results = trainer.train({iterations: iterations}, function(results) {
+    console.log("Total turns:", qplayer.turns);
+    qplayer.saveToFile("trained.qp");
+    console.log('Saved to file');
+});
+
