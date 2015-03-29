@@ -12218,6 +12218,21 @@ QPlayer.prototype.loadFromFile = function(filepath) {
     return this;
 }
 
+QPlayer.prototype.loadFromString = function(data) {
+    var trainedData;
+    try {
+        trainedData = JSON.parse(data);
+    } catch (e) {
+        console.error("Impossible to get training file", e);
+        process.exit(1);
+    }
+    this.scores = new Float32Array(trainedData.scores);
+    this.counts = new Float32Array(trainedData.counts);
+    this.turns = trainedData.turns;
+    this.G = trainedData.G;
+    return this;
+}
+
 module.exports = QPlayer;
 
 }).call(this,require('_process'))
@@ -12295,13 +12310,14 @@ module.exports = Trainer;
 var _ = require('lodash');
 var Game = require('./game.js');
 var QPlayer = require('./qplayer.js');
+var IaPlayer = require('./iaplayer.js');
 
 var game = null;
 var turn = 0;
 
-var TrainerFront = function(mode) {
+var TrainerFront = function(mode, scoree) {
     if (mode == 0) {
-        var player1 = new QPlayer(0, 0.9).loadFromFile("trained.qp");
+        var player1 = new QPlayer(0, 0.9).loadFromString(scoree);
         var player2 = new IaPlayer(1);
     }
     this.players = [player1, player2];
@@ -12363,9 +12379,11 @@ TrainerFront.prototype.play = function (x, y) {
     var results = [0, 0, 0]; // Player1Win, Player2Win, Tie
     if (!game.isFinished()) {
         if (x == -1) {
-            var player = players[turn % 2];
-            game.makeMove(player.getTurn(game), player.playerId);
+            var player = this.players[turn % 2];
+            var move = player.getTurn(game);
+            game.makeMove(move, player.playerId);
             turn++;
+            return {"turn": turn, "player": player.playerId, "x":move % 3, "y": Math.floor(8 / 3)};
         }
     } else {
         var winnerId = game.getWinner();
@@ -12376,7 +12394,7 @@ TrainerFront.prototype.play = function (x, y) {
                 results[2]++;
             }
     }
-    return {"turn": turn, "player": player.playerId, "x":x, "y": y};
+    return ;
 }
 
 TrainerFront.prototype.runGame = function(turn) {
@@ -12385,7 +12403,7 @@ TrainerFront.prototype.runGame = function(turn) {
 
 module.exports = TrainerFront;
 
-},{"./game.js":3,"./qplayer.js":6,"lodash":5}],9:[function(require,module,exports){
+},{"./game.js":3,"./iaplayer.js":4,"./qplayer.js":6,"lodash":5}],9:[function(require,module,exports){
 
 },{}],10:[function(require,module,exports){
 // shim for using process in browser

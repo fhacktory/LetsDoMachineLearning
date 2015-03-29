@@ -1,13 +1,14 @@
 var _ = require('lodash');
 var Game = require('./game.js');
 var QPlayer = require('./qplayer.js');
+var IaPlayer = require('./iaplayer.js');
 
 var game = null;
 var turn = 0;
 
-var TrainerFront = function(mode) {
+var TrainerFront = function(mode, scoree) {
     if (mode == 0) {
-        var player1 = new QPlayer(0, 0.9).loadFromFile("trained.qp");
+        var player1 = new QPlayer(0, 0.9).loadFromString(scoree);
         var player2 = new IaPlayer(1);
     }
     this.players = [player1, player2];
@@ -69,9 +70,11 @@ TrainerFront.prototype.play = function (x, y) {
     var results = [0, 0, 0]; // Player1Win, Player2Win, Tie
     if (!game.isFinished()) {
         if (x == -1) {
-            var player = players[turn % 2];
-            game.makeMove(player.getTurn(game), player.playerId);
+            var player = this.players[turn % 2];
+            var move = player.getTurn(game);
+            game.makeMove(move, player.playerId);
             turn++;
+            return {"turn": turn, "player": player.playerId, "x":move % 3, "y": Math.floor(8 / 3)};
         }
     } else {
         var winnerId = game.getWinner();
@@ -82,7 +85,7 @@ TrainerFront.prototype.play = function (x, y) {
                 results[2]++;
             }
     }
-    return {"turn": turn, "player": player.playerId, "x":x, "y": y};
+    return ;
 }
 
 TrainerFront.prototype.runGame = function(turn) {
