@@ -50,7 +50,7 @@ var winnerMoves = [ // To not make 200 ifs...
 ];
 function checkWinnerMove(board, winnerMove) { // If the 3 cases are the same, return the players who won, else return -1
     if (board[winnerMove[0]] == board[winnerMove[1]] && board[winnerMove[1]] == board[winnerMove[2]])
-        return winnerMove[0];
+        return board[winnerMove[0]];
     return -1;
 }
 
