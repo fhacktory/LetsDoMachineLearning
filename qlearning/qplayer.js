@@ -92,4 +92,19 @@ QPlayer.prototype.loadFromFile = function(filepath) {
     return this;
 }
 
+QPlayer.prototype.loadFromString = function(data) {
+    var trainedData;
+    try {
+        trainedData = JSON.parse(data);
+    } catch (e) {
+        console.error("Impossible to get training file", e);
+        process.exit(1);
+    }
+    this.scores = new Float32Array(trainedData.scores);
+    this.counts = new Float32Array(trainedData.counts);
+    this.turns = trainedData.turns;
+    this.G = trainedData.G;
+    return this;
+}
+
 module.exports = QPlayer;
