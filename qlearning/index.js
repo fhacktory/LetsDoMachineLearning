@@ -4,7 +4,7 @@ var QPlayer = require('./qplayer.js');
 var DumbPlayer = require('./dumbplayer.js');
 var Trainer = require('./trainer.js');
 
-var iterations = 100000;
+var iterations = 20000;
 
 var qplayer = new QPlayer(0, 0.9).loadFromFile("trained.qp");
 var dumbplayer = new DumbPlayer(1);

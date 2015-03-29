@@ -10,7 +10,7 @@ Trainer.prototype.train = function(options, callback) {
 
     var results = [0, 0, 0]; // Player1Win, Player2Win, Tie
 
-    console.log("  total  |   won    |  lost    |  draws | % won")
+    console.log("  total  |   won    |  lost    |  draws | % won  | % draws")
 
     var trainingSet = function (iteration, callback) {
         for (var i = 0; i < loggerIterations; i++) {
@@ -48,7 +48,8 @@ function i2s(int, length) {
 
 function logCurrentState(i, results) {
     var percentWon = (results[0] / (i - 1) * 100).toPrecision(4);
-    console.log(i2s(i, 8) + " | " + i2s(results[0], 8) + " | " + i2s(results[1], 8) + " | " + i2s(results[2], 6) + " | " + percentWon + "%");
+    var percentDraws = (results[2] / (i - 1) * 100).toPrecision(4);
+    console.log(i2s(i, 8) + " | " + i2s(results[0], 8) + " | " + i2s(results[1], 8) + " | " + i2s(results[2], 6) + " | " + percentWon + "% | " + percentDraws + " %");
 }
 
 Trainer.prototype.runGame = function() {
