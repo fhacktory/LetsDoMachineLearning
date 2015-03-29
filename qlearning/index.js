@@ -3,7 +3,7 @@ var Game = require('./game.js');
 var QPlayer = require('./qplayer.js');
 var DumbPlayer = require('./dumbplayer.js');
 var Trainer = require('./trainer.js');
-var IaPlayer = require('./IaPlayer.js');
+var IaPlayer = require('./iaplayer.js');
 var iterations = 10000;
 
 var qplayer = new QPlayer(0, 0.9).loadFromFile("trained.qp");
