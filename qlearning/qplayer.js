@@ -36,9 +36,9 @@ QPlayer.prototype.getTurn = function(state) {
     } else {
         var freeMoves = state.getFreeMoves();
         var movesProbas = [];
-        _.each(freeMoves, function(move) {
-            movesProbas[move] = this.getProbaFromKey(state.createFromMove(move, this.playerId).serialize());
-        }.bind(this));
+        for (var i = freeMoves.length - 1; i >= 0; i--) {
+            movesProbas[freeMoves[i]] = this.getProbaFromKey(state.createFromMove(freeMoves[i], this.playerId).serialize());
+        };
         var resultProbas = getMaxProba(movesProbas);
         if (resultProbas.moves.length == 1) {
             move = resultProbas.moves[0];
@@ -52,7 +52,7 @@ QPlayer.prototype.getTurn = function(state) {
         this.scores[newStateSerialization] = 1;
     var serialization = state.serialize();
     this.counts[serialization] = this.counts[serialization] ? this.counts[serialization] + 1 : 1;
-    this.scores[serialization] = (this.scores[serialization] || 0) + (1 / this.counts[serialization]) * (this.G * (this.scores[newStateSerialization] || 0) - (this.scores[serialization] || 0));
+    this.scores[serialization] = (this.scores[serialization] || 0) + (1 / (1 + this.counts[serialization])) * (this.G * (this.scores[newStateSerialization] || 0) - (this.scores[serialization] || 0));
     this.lastStateSerialization = newStateSerialization;
     this.turns++;
     return move;

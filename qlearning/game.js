@@ -87,9 +87,11 @@ Game.prototype.getWinner = function() {
 
 // Game to string for internal purposes
 Game.prototype.serialize = function() {
-    return _(this.board).map(function(caseVal) {
-        return caseVal + 1;
-    }).join('');
+    var serialized = "";
+    for (var i = this.board.length - 1; i >= 0; i--) {
+        serialized += this.board[i] + 1;
+    };
+    return serialized;
 }
 
 // Create a new game and apply the move to it

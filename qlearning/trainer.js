@@ -12,7 +12,7 @@ Trainer.prototype.train = function(options, callback) {
 
     console.log("  total  |   won    |  lost    |  draws | % won  | % draws")
 
-    var trainingSet = function (iteration, callback) {
+    var trainingSet = function trainAll(iteration, callback) {
         for (var i = 0; i < loggerIterations; i++) {
             var game = this.runGame();
             var winnerId = game.getWinner();
@@ -28,7 +28,7 @@ Trainer.prototype.train = function(options, callback) {
         logCurrentState((iteration + 1) * loggerIterations, results);
         if (iteration * loggerIterations >= iterations)
             return callback();
-        setImmediate(trainingSet.bind(this, iteration + 1, callback));
+        setTimeout(trainingSet.bind(this, iteration + 1, callback));
     }.bind(this);
 
     var startTime = new Date();
