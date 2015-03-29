@@ -15,6 +15,10 @@ var Game = function(board) {
     return this;
 }
 
+Game.prototype.clone = function() {
+    return new Game(this.board);
+}
+
 // Apply the move to the board
 Game.prototype.makeMove = function(move, player) {
     if (!this.isPossibleMove(move))
@@ -54,7 +58,7 @@ var winnerMoves = [
 ];
 function checkWinnerMove(board, winnerMove) { // If the 3 cases are the same, return the players who won, else return -1
     if (board[winnerMove[0]] == board[winnerMove[1]] && board[winnerMove[1]] == board[winnerMove[2]])
-        return winnerMove[0];
+        return board[winnerMove[0]];
     return -1;
 }
 
