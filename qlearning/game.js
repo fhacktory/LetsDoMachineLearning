@@ -15,6 +15,10 @@ var Game = function(board) {
     return this;
 }
 
+Game.prototype.clone = function() {
+    return new Game(this.board);
+}
+
 // Apply the move to the board
 Game.prototype.makeMove = function(move, player) {
     if (!this.isPossibleMove(move))
