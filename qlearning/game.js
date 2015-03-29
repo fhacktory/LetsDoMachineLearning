@@ -46,7 +46,7 @@ Game.prototype.getFreeMoves = function() {
 Game.prototype.getFreeMove = function() {
     var free = this.getFreeMoves();
     if (free.length > 0) {
-        return free[Math.floor(Math.random() * free.length)];        
+        return free[Math.floor(Math.random() * free.length)];
     }
     return -1;
 }
@@ -68,7 +68,11 @@ Game.prototype.isFinished = function() {
         if (winner != -1)
             return true;
     };
-    return false;
+    for (var i = this.board.length - 1; i >= 0; i--) {
+        if (this.board[i] === -1)
+            return false
+    };
+    return true;
 }
 
 // Return -1 for a tie, 0 if the player 0 won and 1 if the player 1 won
